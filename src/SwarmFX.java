@@ -7,6 +7,8 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.LinkedList;
 
+//import com.sun.glass.events.MouseEvent;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.EventHandler;
@@ -17,10 +19,12 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
@@ -36,7 +40,7 @@ public class SwarmFX extends Application {
 	private static final int SIZE = 600;
 	private static String PID = "p1041";
 	private static final int ZOMBIE_REACH = 5;
-	
+	private static int KillCount;
 	private static URL getUrl;
 	private static HttpURLConnection conn;
 	private static LinkedList<Sprite> sprites;
@@ -46,12 +50,16 @@ public class SwarmFX extends Application {
 	private static Player player;
 	private final static boolean[] buttonsPressed = {false, false, false, false};
 	private static AnimationTimer timer;
+	
+	//call init(), then start()
 	public static void main(String[] args) {
 		launch(args);
 	}
+	
 	//init is called first
 	@Override
 	public void init() {
+		KillCount = 0;
 		player = new Player(PID, 500, 500);
 		sprites = new LinkedList<Sprite>();
 		canvas = new Canvas(SIZE, SIZE);
@@ -89,9 +97,17 @@ public class SwarmFX extends Application {
 		clearBtn.setOnMouseClicked(e -> {
 			clear();
 		});
+		Button newBtn = new Button("New");
+		newBtn.setPrefWidth(190);
+		newBtn.setOnMouseClicked(e -> {
+			clear();
+			for (int i = 0; i < buttonsPressed.length; i++) buttonsPressed[i] = false;
+			KillCount = 0;
+			timer.start();
+		});
 		VBox rightPane = new VBox();
 		rightPane.setPrefWidth(200);
-		rightPane.getChildren().add(clearBtn);
+		rightPane.getChildren().addAll(newBtn, clearBtn);
 		pane.setRight(rightPane);
 		
 		mainScene = new Scene(pane);
@@ -137,6 +153,32 @@ public class SwarmFX extends Application {
 					buttonsPressed[3] = false; //right
 					break;
 				}
+				
+			}
+			
+		});
+		//Shoot em up
+		mainScene.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent click1) {
+				int x = (int) Math.round(click1.getX());
+				int y = (int) Math.round(click1.getY());
+				System.out.printf("Shot at %d,%d%n", x,y);
+				
+				for (Sprite s: sprites) {
+					int sX = s.getX();
+					int sY = s.getY();
+					
+					if (Math.abs(sX-x) <= 5 && Math.abs(sY-y) <= 5) {
+						System.out.printf("Sprite %s destroyed @ %d,%d%n", s.getId(), s.getX(), s.getY());
+						if (kill(s.getId())) {
+							KillCount++;
+						}
+						break;
+					}
+				}
+						
 				
 			}
 			
@@ -324,15 +366,18 @@ public class SwarmFX extends Application {
 		Stage lossStage = new Stage();
 		lossStage.setTitle("Expiration");
 		Label lossLabel = new Label("You have been devoured.");
-		Button lossOkay = new Button(":'(");
+		Label killLabel = new Label("You killed " + KillCount + " of the undead.");
+		Button lossOkay = new Button("Okay");
 		lossOkay.setOnMouseClicked(e -> {
-			System.exit(0);
+			lossStage.close();
 		});
 		VBox lossPane = new VBox();
 		lossPane.setAlignment(Pos.CENTER);
 		lossPane.setPrefWidth(300);
-		lossPane.getChildren().addAll(lossLabel, lossOkay);
+		lossPane.getChildren().addAll(lossLabel, killLabel, lossOkay);
 		lossStage.setScene(new Scene(lossPane));
+		lossStage.initModality(Modality.APPLICATION_MODAL);
+		lossStage.requestFocus();
 		lossStage.show();
 	}
 }
