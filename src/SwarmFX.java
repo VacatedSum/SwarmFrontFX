@@ -300,7 +300,7 @@ public class SwarmFX extends Application {
 		// 2 = left
 		// 3 = right
 		int speed = player.getSpeed();
-		if (buttonsPressed[0] && player.getY() + player.getSpeed() < 800) {
+		if (buttonsPressed[0] && player.getY() + player.getSpeed() < SIZE) {
 			player.setY(player.getY() + speed);
 		}
 		if (buttonsPressed[1] && player.getY() - player.getSpeed() > 0) {
@@ -309,7 +309,7 @@ public class SwarmFX extends Application {
 		if (buttonsPressed[2] && player.getX() - player.getSpeed() > 0) {
 			player.setX(player.getX() - speed);
 		}
-		if (buttonsPressed[3] && player.getX() + player.getSpeed() < 800) {
+		if (buttonsPressed[3] && player.getX() + player.getSpeed() < SIZE) {
 			player.setX(player.getX() + speed);
 		}
 	}
