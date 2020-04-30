@@ -38,7 +38,7 @@ public class SwarmFX extends Application {
 	
 	private static final String TITLE_LBL = "Liberty Swarm";
 	private static final int SIZE = 600;
-	private static String PID = "p1041";
+	private static String PID = "p1045";
 	private static final int ZOMBIE_REACH = 5;
 	private static int KillCount;
 	private static URL getUrl;
@@ -243,12 +243,18 @@ public class SwarmFX extends Application {
 			} catch (IllegalStateException ise) {
 				try {
 					Thread.sleep(5);
-				} catch (InterruptedException e) {
-				}
+					} catch (InterruptedException e) {	};
 				
 			} catch (ProtocolException e) {
 				e.printStackTrace();
 				
+			} catch (RuntimeException rte) {
+				try {
+					Thread.sleep(5);
+				} catch (InterruptedException e) {
+					//
+				}
+				getBoard();
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
@@ -274,6 +280,13 @@ public class SwarmFX extends Application {
 			
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
+		} catch (RuntimeException rte) {
+			try {
+				Thread.sleep(5);
+				updatePos();
+			} catch (InterruptedException e) {
+				//
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
