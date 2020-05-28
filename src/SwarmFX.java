@@ -18,9 +18,14 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -35,7 +40,7 @@ import javafx.stage.Stage;
  *
  */
 public class SwarmFX extends Application {
-	
+	private static String APPLICATION_HOST;
 	private static final String TITLE_LBL = "Liberty Swarm";
 	private static final int SIZE = 600;
 	private static String PID = "p1045";
@@ -53,6 +58,7 @@ public class SwarmFX extends Application {
 	
 	//call init(), then start()
 	public static void main(String[] args) {
+		
 		launch(args);
 	}
 	
@@ -65,11 +71,12 @@ public class SwarmFX extends Application {
 		canvas = new Canvas(SIZE, SIZE);
 		gc = canvas.getGraphicsContext2D();
 		
-		getBoard();
 	}
 	//start is called after init
 	@Override
 	public void start(Stage primaryStage) throws IOException {
+		enableDevModePrompt();
+		getBoard();
 		primaryStage.setTitle(TITLE_LBL);
 		
 		//this sets up our frame updates
@@ -111,7 +118,7 @@ public class SwarmFX extends Application {
 		pane.setRight(rightPane);
 		
 		mainScene = new Scene(pane);
-		
+		//start movement
 		mainScene.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
 
 			@Override
@@ -134,7 +141,7 @@ public class SwarmFX extends Application {
 			}
 			
 		});
-		
+		//stop movement
 		mainScene.addEventHandler(KeyEvent.KEY_RELEASED, new EventHandler<KeyEvent>() {
 
 			@Override
@@ -164,14 +171,12 @@ public class SwarmFX extends Application {
 			public void handle(MouseEvent click1) {
 				int x = (int) Math.round(click1.getX());
 				int y = (int) Math.round(click1.getY());
-				System.out.printf("Shot at %d,%d%n", x,y);
-				
+								
 				for (Sprite s: sprites) {
 					int sX = s.getX();
 					int sY = s.getY();
 					
 					if (Math.abs(sX-x) <= 5 && Math.abs(sY-y) <= 5) {
-						System.out.printf("Sprite %s destroyed @ %d,%d%n", s.getId(), s.getX(), s.getY());
 						if (kill(s.getId())) {
 							KillCount++;
 						}
@@ -183,6 +188,7 @@ public class SwarmFX extends Application {
 			}
 			
 		});
+		
 		primaryStage.setScene(mainScene);
 		primaryStage.show();
 		
@@ -219,7 +225,7 @@ public class SwarmFX extends Application {
 	
 	public static void getBoard() {
 			try {
-				getUrl = new URL("http://148.100.244.60:9081/Swarm");
+				getUrl = new URL("http://" + APPLICATION_HOST + ":9081/Swarm");
 				conn = (HttpURLConnection) getUrl.openConnection();
 				conn.setRequestMethod("GET");
 				conn.setRequestProperty("Accept", "application/json");
@@ -229,8 +235,6 @@ public class SwarmFX extends Application {
 				BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 				
 				String output = br.readLine();
-				
-				//conn.disconnect();
 				
 				String[] objList = output.split("&");
 				sprites = new LinkedList<Sprite>();
@@ -266,7 +270,7 @@ public class SwarmFX extends Application {
 	public static void updatePos() {
 			
 		try {
-			URL putUrl = new URL("http://148.100.244.60:9081/Swarm?id=" + player.getId() + "&newX=" + player.getX() + "&newY=" + player.getY());
+			URL putUrl = new URL("http://" + APPLICATION_HOST + ":9081/Swarm?id=" + player.getId() + "&newX=" + player.getX() + "&newY=" + player.getY());
 			HttpURLConnection conn = (HttpURLConnection) putUrl.openConnection();
 			conn.setRequestMethod("PUT");
 			conn.setRequestProperty("Accept","application/json");
@@ -331,7 +335,7 @@ public class SwarmFX extends Application {
 	
 	public static boolean kill(String id) {
 		try {
-			URL delUrl = new URL("http://148.100.244.60:9081/Swarm?id=" + id);
+			URL delUrl = new URL("http://" + APPLICATION_HOST + ":9081/Swarm?id=" + id);
 			HttpURLConnection conn = (HttpURLConnection) delUrl.openConnection();
 			conn.setRequestMethod("DELETE");
 			
@@ -356,7 +360,7 @@ public class SwarmFX extends Application {
 		for (Sprite s : sprites) {
 			URL delUrl;
 			try {
-				delUrl = new URL("http://148.100.244.60:9081/Swarm?id=" + s.getId());
+				delUrl = new URL("http://" + APPLICATION_HOST + ":9081/Swarm?id=" + s.getId());
 				HttpURLConnection conn = (HttpURLConnection) delUrl.openConnection();
 				conn.setRequestMethod("DELETE");
 				conn.getResponseCode();
@@ -392,5 +396,49 @@ public class SwarmFX extends Application {
 		lossStage.initModality(Modality.APPLICATION_MODAL);
 		lossStage.requestFocus();
 		lossStage.show();
+	}
+	
+	public static void enableDevModePrompt() {
+		Stage devStage = new Stage();
+		ToggleGroup choices = new ToggleGroup();
+		RadioButton localhostBtn = new RadioButton("localhost");
+		RadioButton lsoBtn = new RadioButton("libertySwarm.online");
+		RadioButton otherBtn = new RadioButton("specify:");
+		localhostBtn.setToggleGroup(choices);
+		lsoBtn.setToggleGroup(choices);
+		otherBtn.setToggleGroup(choices);
+		TextField specifyField = new TextField();
+		
+		Button okayBtn = new Button("Continue");
+		okayBtn.setOnMouseClicked(e -> {
+			if (choices.getSelectedToggle().equals(localhostBtn)) {
+				APPLICATION_HOST = "localhost";
+			} 
+			else if (choices.getSelectedToggle().equals(lsoBtn)) {
+				APPLICATION_HOST = "www.libertyswarm.online";
+			} else if (choices.getSelectedToggle().equals(otherBtn)) {
+				if (specifyField.getText().length() > 0) {
+					APPLICATION_HOST = specifyField.getText();
+				}
+			} else {
+				return;
+			}
+			devStage.close();
+		});
+		Button cancelBtn = new Button("Cancel");
+		cancelBtn.setOnMouseClicked(e -> {
+			System.exit(0);
+		});
+		HBox okayCancel = new HBox();
+		okayCancel.getChildren().addAll(okayBtn, cancelBtn);
+		VBox pane = new VBox();
+		pane.getChildren().addAll(localhostBtn, lsoBtn, otherBtn, specifyField, okayCancel);
+		
+		
+		devStage.setTitle("server selection");
+		
+		Scene devScene = new Scene(pane);
+		devStage.setScene(devScene);
+		devStage.showAndWait();
 	}
 }
