@@ -18,7 +18,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Labeled;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
@@ -272,7 +271,7 @@ public class SwarmFX extends Application {
 		try {
 			URL putUrl = new URL("http://" + APPLICATION_HOST + ":9081/Swarm?id=" + player.getId() + "&newX=" + player.getX() + "&newY=" + player.getY());
 			HttpURLConnection conn = (HttpURLConnection) putUrl.openConnection();
-			conn.setRequestMethod("PUT");
+			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Accept","application/json");
 			
 			if (conn.getResponseCode() != 200) {
